@@ -23,12 +23,13 @@
       <h1>Seu treino.<br><em>Seu progresso.</em></h1>
       <p class="muted">Entre para consultar seu treino e acompanhar sua evolução.</p>
       <form id="loginForm">
-        <label>E-mail<input id="email" type="email" autocomplete="username" required placeholder="seuemail@exemplo.com"></label>
+        <label>E-mail da professora ou WhatsApp do aluno<input id="loginId" type="text" autocomplete="username" required placeholder="E-mail ou DDD + número"></label>
         <label>Senha<input id="password" type="password" autocomplete="current-password" required placeholder="Sua senha"></label>
         <button class="primary" type="submit">Entrar</button>
         <p id="loginMessage" class="message" aria-live="polite"></p>
       </form>
-      <p class="tiny">O acesso é liberado pela equipe da Fênix Academia.</p>
+      <p class="tiny">Professora: entre com seu e-mail. Aluno: entre com seu WhatsApp (DDD + número).</p>
+      <section id="claimInvite" class="hidden"><hr><h2>Ativar meu acesso</h2><p class="muted">Crie uma senha para entrar na Fênix Academia.</p><form id="claimForm"><label>Nova senha<input id="claimPassword" type="password" minlength="8" autocomplete="new-password" required placeholder="Mínimo de 8 caracteres"></label><label>Confirme a senha<input id="claimPasswordConfirm" type="password" minlength="8" autocomplete="new-password" required placeholder="Digite novamente"></label><button class="primary" type="submit">Criar minha senha</button><p id="claimMessage" class="message" aria-live="polite"></p></form></section>
     </section>
 
     <section id="appView" class="hidden">

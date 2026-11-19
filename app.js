@@ -70,7 +70,12 @@ function showExercise(ex){
 
 $("loginForm").addEventListener("submit",async e=>{
   e.preventDefault();showMessage("loginMessage","Entrando…");
-  const {data,error}=await supabase.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});
+  const loginId=$("loginId").value.trim();
+  const password=$("password").value;
+  const credentials = loginId.includes("@")
+    ? { email: loginId.toLowerCase(), password }
+    : { phone: normalizePhone(loginId), password };
+  const {data,error}=await supabase.auth.signInWithPassword(credentials);
   if(error){showMessage("loginMessage",error.message);return;}
   try{await startSession(data.session);}catch(err){await supabase.auth.signOut();showMessage("loginMessage",err.message);}
 });
@@ -93,65 +98,54 @@ supabase.auth.onAuthStateChange(async(_event,session)=>{
 });
 
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));}
-// CADASTRO DE ALUNOS - FÊNIX ACADEMIA
+function normalizePhone(value){
+  let digits=String(value||"").replace(/\D/g,"");
+  if(digits.length===10||digits.length===11) digits="55"+digits;
+  return digits.startsWith("+")?digits:"+"+digits;
+}
+
+// Cadastro de alunos: nome e WhatsApp, sem exigir e-mail.
 const studentForm = document.createElement("form");
 studentForm.id = "studentInviteForm";
 studentForm.className = "stack";
 studentForm.innerHTML = `
-  <hr>
-  <h2>Cadastrar aluno</h2>
-  <label>Nome do aluno
-    <input id="newStudentName" required placeholder="Nome completo">
-  </label>
-  <label>E-mail
-    <input id="newStudentEmail" type="email" required placeholder="E-mail do aluno">
-  </label>
-  <label>WhatsApp
-    <input id="newStudentPhone" type="tel" required placeholder="DDD + número">
-  </label>
-  <button class="primary" type="submit">Gerar convite pelo WhatsApp</button>
-  <p id="studentInviteMessage" class="message"></p>
-`;
-
+  <hr><h2>Cadastrar aluno</h2>
+  <label>Nome do aluno<input id="newStudentName" required placeholder="Nome completo"></label>
+  <label>WhatsApp<input id="newStudentPhone" type="tel" inputmode="tel" required placeholder="DDD + número"></label>
+  <button class="primary" type="submit">Enviar convite pelo WhatsApp</button>
+  <p id="studentInviteMessage" class="message" aria-live="polite"></p>`;
 $("studentsList").insertAdjacentElement("afterend", studentForm);
 
 studentForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-
-  const name = $("newStudentName").value.trim();
-  const email = $("newStudentEmail").value.trim();
-  const phone = $("newStudentPhone").value.trim();
-
-  const message = $("studentInviteMessage");
-  message.textContent = "Gerando convite...";
-
-  const { data, error } = await supabase.functions.invoke(
-    "create-student-invite",
-    {
-      body: {
-        full_name: name,
-        email: email,
-        phone: phone
-      }
-    }
-  );
-
-  if (error || !data?.action_link) {
-    message.textContent =
-      data?.error || error?.message || "Não foi possível gerar o convite.";
-    return;
-  }
-
-  let number = phone.replace(/\D/g, "");
-  if (number.length === 10 || number.length === 11) {
-    number = "55" + number;
-  }
-
-  const text = `Olá, ${name}! Você foi convidado(a) para acessar a Fênix Academia. Abra este link para criar sua senha e entrar: ${data.action_link}`;
-
-  message.textContent = "Convite gerado. Abrindo o WhatsApp...";
-  window.open(
-    "https://wa.me/" + number + "?text=" + encodeURIComponent(text),
-    "_blank"
-  );
+  const name=$("newStudentName").value.trim();
+  const phone=normalizePhone($("newStudentPhone").value);
+  const message=$("studentInviteMessage");
+  message.textContent="Gerando convite…";
+  const {data,error}=await supabase.functions.invoke("create-student-invite",{body:{full_name:name,phone}});
+  if(error||!data?.invite_url){message.textContent=data?.error||error?.message||"Não foi possível gerar o convite.";return;}
+  const digits=phone.replace(/\D/g,"");
+  const text=`Olá, ${name}! Você foi convidado(a) para acessar a Fênix Academia. Abra este link para criar sua senha: ${data.invite_url}`;
+  message.textContent="Convite criado. Abrindo o WhatsApp…";
+  window.open("https://wa.me/"+digits+"?text="+encodeURIComponent(text),"_blank");
+  $("newStudentName").value="";$("newStudentPhone").value="";
 });
+
+// O convite é validado no servidor; o aluno define a própria senha.
+const inviteToken=new URLSearchParams(location.search).get("convite");
+if(inviteToken){
+  $("claimInvite").classList.remove("hidden");
+  $("claimInvite").scrollIntoView({behavior:"smooth",block:"center"});
+  $("claimForm").addEventListener("submit",async e=>{
+    e.preventDefault();
+    const password=$("claimPassword").value;
+    if(password!==$("claimPasswordConfirm").value){showMessage("claimMessage","As senhas não conferem.");return;}
+    showMessage("claimMessage","Ativando seu acesso…");
+    const {data,error}=await supabase.functions.invoke("claim-student-invite",{body:{token:inviteToken,password}});
+    if(error||!data?.success){showMessage("claimMessage",data?.error||error?.message||"Não foi possível ativar o convite.");return;}
+    showMessage("claimMessage","Acesso criado! Agora entre com seu WhatsApp e a senha que acabou de cadastrar.");
+    $("loginId").value=data.phone||"";
+    $("claimForm").reset();
+    history.replaceState({},"",location.pathname);
+  });
+}
