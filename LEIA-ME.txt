@@ -1,0 +1,22 @@
+FÊNIX ACADEMIA — PRIMEIRA VERSÃO PWA
+
+O que já está preparado:
+- Interface responsiva em português, preto e laranja.
+- Manifesto e service worker para instalação como aplicativo pelo navegador.
+- Login pelo Supabase Auth.
+- Leitura de perfil, treinos e exercícios conforme as políticas RLS existentes.
+- Área administrativa básica para listar alunos e criar planos de treino.
+
+CONFIGURAÇÃO
+O app já aponta para o projeto Supabase configurado anteriormente e usa a chave pública publishable/anon. Não coloque a chave service_role em arquivos do navegador.
+
+IMPORTANTE — O QUE AINDA NÃO ESTÁ PRONTO
+- Não existe usuário administrador criado ainda.
+- O fluxo seguro de convite/cadastro de alunos precisa de uma função de servidor para validar convites e criar contas. Não habilite cadastro público aberto.
+- O formulário administrativo cria o plano, mas a inclusão de exercícios/séries no plano será concluída na próxima etapa.
+- A demonstração com a mascote original precisa da imagem oficial enviada pela proprietária; não foi substituída por personagem genérico.
+- Antes de entregar a alunos, testar login, RLS, convites, criação de treinos e acessibilidade.
+- Gratuidade depende dos limites e políticas dos provedores; não há garantia de custo zero para sempre.
+
+PUBLICAÇÃO
+Este é um site estático. Pode ser publicado em hospedagem estática com HTTPS. Para instalar no celular, abrir o link no navegador e escolher “Adicionar à tela inicial” / “Instalar app”.

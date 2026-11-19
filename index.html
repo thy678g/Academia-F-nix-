@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111111">
+  <meta name="description" content="Fênix Academia — seus treinos, no seu ritmo.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <title>Fênix Academia</title>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-mark">✦</div>
+    <div><strong>FÊNIX</strong><span> ACADEMIA</span></div>
+    <button id="logoutBtn" class="ghost hidden">Sair</button>
+  </header>
+
+  <main class="shell">
+    <section id="loginView" class="panel login-panel">
+      <div class="eyebrow">FORÇA • FOCO • CONSTÂNCIA</div>
+      <h1>Seu treino.<br><em>Seu progresso.</em></h1>
+      <p class="muted">Entre para consultar seu treino e acompanhar sua evolução.</p>
+      <form id="loginForm">
+        <label>E-mail<input id="email" type="email" autocomplete="username" required placeholder="seuemail@exemplo.com"></label>
+        <label>Senha<input id="password" type="password" autocomplete="current-password" required placeholder="Sua senha"></label>
+        <button class="primary" type="submit">Entrar</button>
+        <p id="loginMessage" class="message" aria-live="polite"></p>
+      </form>
+      <p class="tiny">O acesso é liberado pela equipe da Fênix Academia.</p>
+    </section>
+
+    <section id="appView" class="hidden">
+      <div class="welcome">
+        <div><div class="eyebrow">ÁREA DO ALUNO</div><h1>Olá, <span id="userName">atleta</span>!</h1><p class="muted">Vamos cuidar da sua evolução?</p></div>
+        <div class="flame">✦</div>
+      </div>
+      <div id="adminBanner" class="admin-banner hidden">PAINEL DA PROFESSORA</div>
+      <div id="adminView" class="panel hidden">
+        <h2>Alunos</h2>
+        <p class="muted">Contas já autorizadas no sistema.</p>
+        <div id="studentsList" class="stack"></div>
+        <hr>
+        <h2>Montar treino</h2>
+        <form id="planForm" class="stack">
+          <label>Aluno<select id="studentSelect" required><option value="">Selecione um aluno</option></select></label>
+          <label>Dia da semana<select id="weekday" required>
+            <option value="1">Segunda — Cardio</option><option value="2">Terça — Quadríceps</option><option value="3">Quarta — Parte superior</option><option value="4">Quinta — Cardio</option><option value="5">Sexta — Posterior e glúteos</option><option value="6">Sábado</option><option value="7">Domingo</option>
+          </select></label>
+          <label>Nome do treino<input id="planTitle" required placeholder="Ex.: Treino de quadríceps"></label>
+          <label>Observações<textarea id="planNotes" rows="2" placeholder="Orientações da professora"></textarea></label>
+          <button class="primary" type="submit">Criar treino</button>
+          <p id="planMessage" class="message"></p>
+        </form>
+      </div>
+
+      <div class="section-head"><div><div class="eyebrow">SUA ROTINA</div><h2>Treinos da semana</h2></div></div>
+      <div id="workouts" class="workout-grid"></div>
+      <div id="exerciseDetail" class="panel hidden"></div>
+      <div class="panel tip"><strong>Um passo de cada vez.</strong><p class="muted">Respeite seus limites e siga as orientações da professora. Em caso de dor ou desconforto, interrompa o exercício e peça orientação.</p></div>
+    </section>
+  </main>
+  <footer>FÊNIX ACADEMIA <span>•</span> MOVA-SE COM PROPÓSITO</footer>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
