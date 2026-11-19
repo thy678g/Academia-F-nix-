@@ -86,13 +86,28 @@ $("adminPlanSelect").addEventListener("change",()=>{
 });
 
 async function loadWorkouts(){
-  const {data: plans,error} = await supabase.from("workout_plans").select("id,title,weekday,notes,workout_items(id,order_index,sets,reps,load,rest_seconds,notes,exercises(id,name,muscle_group,instructions,safety_notes,stages,demo_media_url,demo_media_type))").eq("student_id",currentProfile.id).eq("is_active",true).order("weekday");
+  const {data: plans,error} = await supabase.from("workout_plans").select("id,title,weekday,notes,workout_items(id,order_index,sets,reps,load,rest_seconds,notes,exercises(id,name,muscle_group,instructions,safety_notes,stages,demo_media_url,demo_media_type,demo_media))").eq("student_id",currentProfile.id).eq("is_active",true).order("weekday");
   if(error){$("workouts").innerHTML=`<div class="empty">Não foi possível carregar os treinos: ${escapeHtml(error.message)}</div>`;return;}
   if(!plans?.length){$("workouts").innerHTML='<div class="empty">Seus treinos aparecerão aqui quando a professora fizer sua programação.</div>';return;}
   $("workouts").innerHTML=plans.map(p=>`<button class="day-card" data-plan="${p.id}"><span class="day">${weekdayNames[p.weekday]||"TREINO"}</span><strong>${escapeHtml(p.title)}</strong><small>${(p.workout_items||[]).length} exercício(s) • Toque para abrir</small></button>`).join("");
   $("workouts").querySelectorAll("[data-plan]").forEach(btn=>btn.addEventListener("click",()=>showPlan(plans.find(p=>p.id===btn.dataset.plan))));
 }
 
+function exerciseMediaMarkup(ex){
+  let media=Array.isArray(ex.demo_media)?ex.demo_media:[];
+  if(!media.length && ex.demo_media_url){
+    media=[{url:ex.demo_media_url,type:ex.demo_media_type||"image"}];
+  }
+  if(!media.length) return '<p class="muted">A professora ainda não adicionou fotos ou vídeos demonstrativos.</p>';
+  return `<div class="exercise-media-gallery">${media.map((item,i)=>{
+    const url=escapeHtml(item.url||item.publicUrl||"");
+    const type=item.type||item.media_type||(String(item.mimeType||"").startsWith("video/")?"video":"image");
+    if(!url)return "";
+    return type==="video"
+      ? `<video class="exercise-demo-media" src="${url}" controls playsinline preload="metadata">Seu navegador não reproduz este vídeo.</video>`
+      : `<img class="exercise-demo-media" src="${url}" alt="Demonstração ${i+1} de ${escapeHtml(ex.name||"exercício")}" loading="lazy">`;
+  }).join("")}</div>`;
+}
 function showPlan(plan){
   const items=(plan.workout_items||[]).sort((a,b)=>a.order_index-b.order_index);
   $("exerciseDetail").classList.remove("hidden");
@@ -100,7 +115,9 @@ function showPlan(plan){
   (items.length?items.map((it,i)=>{
     const ex=it.exercises||{};
     const stages=Array.isArray(ex.stages)?ex.stages:[];
-    const details=`<div class="stage hidden" id="exerciseInfo${i}"><h3>${escapeHtml(ex.name||"Exercício")}</h3><p>${escapeHtml(ex.instructions||"Siga a demonstração e a orientação da professora.")}</p>`+
+    const details=`<div class="stage hidden" id="exerciseInfo${i}"><h3>${escapeHtml(ex.name||"Exercício")}</h3>`+
+      exerciseMediaMarkup(ex)+
+      `<p>${escapeHtml(ex.instructions||"Siga a demonstração e a orientação da professora.")}</p>`+
       stages.map((s,n)=>`<p><b>Etapa ${n+1}:</b> ${escapeHtml(typeof s==="string"?s:(s.title||s.description||JSON.stringify(s)))}</p>`).join("")+
       (ex.safety_notes?`<p><b>Atenção:</b> ${escapeHtml(ex.safety_notes)}</p>`:"")+
       `</div>`;
@@ -120,11 +137,7 @@ function showExercise(ex){
   if(!ex)return;
   const stages=Array.isArray(ex.stages)?ex.stages:[];
   const detail=document.createElement("div");detail.className="stage";
-  const media = ex.demo_media_url
-    ? (ex.demo_media_type==="video"
-      ? `<video class="exercise-demo-media" src="${escapeHtml(ex.demo_media_url)}" controls playsinline preload="metadata"></video>`
-      : `<img class="exercise-demo-media" src="${escapeHtml(ex.demo_media_url)}" alt="Demonstração de ${escapeHtml(ex.name)}" loading="lazy">`)
-    : `<p class="muted">A professora ainda não adicionou foto ou vídeo demonstrativo para este exercício.</p>`;
+  const media = exerciseMediaMarkup(ex);
   detail.innerHTML=`<h3>${escapeHtml(ex.name)}</h3>${media}<p>${escapeHtml(ex.instructions||"Siga a demonstração e a orientação da professora.")}</p>`+
     stages.map((s,i)=>`<p><b>Etapa ${i+1}:</b> ${escapeHtml(typeof s==="string"?s:(s.title||s.description||JSON.stringify(s)))}</p>`).join("")+
     (ex.safety_notes?`<p><b>Atenção:</b> ${escapeHtml(ex.safety_notes)}</p>`:"");
@@ -162,42 +175,38 @@ $("customExerciseForm").addEventListener("submit",async e=>{
   const group=$("customExerciseGroup").value.trim();
   const instructions=$("customExerciseInstructions").value.trim();
   const safety=$("customExerciseSafety").value.trim();
-  const mediaFile=$("customExerciseMedia").files?.[0]||null;
+  const files=Array.from($("customExerciseMedia").files||[]);
   if(!name||!group||!instructions){showMessage("customExerciseMessage","Preencha nome, grupo muscular e modo de execução.");return;}
-  if(mediaFile && mediaFile.size>25*1024*1024){
-    showMessage("customExerciseMessage","O arquivo deve ter no máximo 25 MB.");return;
-  }
-  const allowedTypes=["image/jpeg","image/png","image/webp","image/gif","video/mp4","video/webm","video/quicktime"];
-  if(mediaFile && !allowedTypes.includes(mediaFile.type)){
-    showMessage("customExerciseMessage","Envie uma imagem JPG, PNG, WEBP, GIF ou vídeo MP4, WEBM, MOV.");return;
-  }
-
-  showMessage("customExerciseMessage",mediaFile?"Enviando foto/vídeo e salvando exercício…":"Salvando exercício…");
-  let demoMediaUrl=null, demoMediaType=null, uploadedPath=null;
-  if(mediaFile){
-    const extension=(mediaFile.name.split(".").pop()||"bin").toLowerCase().replace(/[^a-z0-9]/g,"");
-    uploadedPath=`${crypto.randomUUID()}.${extension}`;
-    const {error:uploadError}=await supabase.storage.from("exercise-demos").upload(uploadedPath,mediaFile,{
-      cacheControl:"3600",upsert:false,contentType:mediaFile.type
+  const allowed=["image/jpeg","image/png","image/webp","image/gif","video/mp4","video/webm","video/quicktime"];
+  if(files.some(f=>f.size>25*1024*1024)){showMessage("customExerciseMessage","Cada arquivo deve ter no máximo 25 MB.");return;}
+  if(files.some(f=>!allowed.includes(f.type))){showMessage("customExerciseMessage","Use JPG, PNG, WEBP, GIF, MP4, WEBM ou MOV.");return;}
+  showMessage("customExerciseMessage",files.length?"Enviando fotos/vídeos e salvando exercício…":"Salvando exercício…");
+  const uploaded=[];
+  for(const file of files){
+    const ext=(file.name.split(".").pop()||"bin").toLowerCase().replace(/[^a-z0-9]/g,"");
+    const path=`${crypto.randomUUID()}.${ext}`;
+    const {error:uploadError}=await supabase.storage.from("exercise-demos").upload(path,file,{
+      cacheControl:"3600",upsert:false,contentType:file.type
     });
-    if(uploadError){showMessage("customExerciseMessage","Não foi possível enviar a mídia: "+uploadError.message);return;}
-    const {data:publicData}=supabase.storage.from("exercise-demos").getPublicUrl(uploadedPath);
-    demoMediaUrl=publicData.publicUrl;
-    demoMediaType=mediaFile.type.startsWith("video/")?"video":"image";
+    if(uploadError){
+      if(uploaded.length) await supabase.storage.from("exercise-demos").remove(uploaded.map(x=>x.path));
+      showMessage("customExerciseMessage","Não foi possível enviar a mídia: "+uploadError.message);return;
+    }
+    const {data:publicData}=supabase.storage.from("exercise-demos").getPublicUrl(path);
+    uploaded.push({path,url:publicData.publicUrl,type:file.type.startsWith("video/")?"video":"image"});
   }
-
   const slugBase=name.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,48)||"exercicio";
   const slug=slugBase+"-"+crypto.randomUUID().slice(0,8);
   const {data,error}=await supabase.from("exercises").insert({
     slug,name,muscle_group:group,instructions,safety_notes:safety||null,
-    demo_media_url:demoMediaUrl,demo_media_type:demoMediaType,is_active:true
+    demo_media:uploaded.map(({url,type})=>({url,type})),
+    demo_media_url:uploaded[0]?.url||null,demo_media_type:uploaded[0]?.type||null,is_active:true
   }).select("id,name,muscle_group").single();
-
   if(error){
-    if(uploadedPath) await supabase.storage.from("exercise-demos").remove([uploadedPath]);
+    if(uploaded.length) await supabase.storage.from("exercise-demos").remove(uploaded.map(x=>x.path));
     showMessage("customExerciseMessage","Não foi possível salvar: "+error.message);return;
   }
-  showMessage("customExerciseMessage",mediaFile?"Exercício cadastrado com demonstração!":"Exercício cadastrado! Agora ele já pode ser selecionado no treino.");
+  showMessage("customExerciseMessage",files.length?"Exercício cadastrado com fotos/vídeos!":"Exercício cadastrado! Agora ele já pode ser selecionado no treino.");
   $("customExerciseForm").reset();
   const {data: exs}=await supabase.from("exercises").select("id,name,muscle_group").eq("is_active",true).order("muscle_group").order("name");
   exerciseCache=exs||[];
@@ -212,28 +221,43 @@ $("customExerciseForm").addEventListener("submit",async e=>{
 $("existingExerciseMediaForm").addEventListener("submit",async e=>{
   e.preventDefault();
   const exerciseId=$("existingExerciseMediaSelect").value;
-  const file=$("existingExerciseMediaFile").files?.[0]||null;
-  if(!exerciseId||!file){showMessage("existingExerciseMediaMessage","Escolha o exercício e o arquivo.");return;}
-  if(file.size>25*1024*1024){showMessage("existingExerciseMediaMessage","O arquivo deve ter no máximo 25 MB.");return;}
+  const files=Array.from($("existingExerciseMediaFile").files||[]);
+  if(!exerciseId||!files.length){showMessage("existingExerciseMediaMessage","Escolha o exercício e pelo menos um arquivo.");return;}
   const allowed=["image/jpeg","image/png","image/webp","image/gif","video/mp4","video/webm","video/quicktime"];
-  if(!allowed.includes(file.type)){showMessage("existingExerciseMediaMessage","Formato não aceito. Use JPG, PNG, WEBP, GIF, MP4, WEBM ou MOV.");return;}
-  showMessage("existingExerciseMediaMessage","Enviando demonstração…");
-  const ext=(file.name.split(".").pop()||"bin").toLowerCase().replace(/[^a-z0-9]/g,"");
-  const path=`${crypto.randomUUID()}.${ext}`;
-  const {error:uploadError}=await supabase.storage.from("exercise-demos").upload(path,file,{
-    cacheControl:"3600",upsert:false,contentType:file.type
-  });
-  if(uploadError){showMessage("existingExerciseMediaMessage","Não foi possível enviar: "+uploadError.message);return;}
-  const {data:publicData}=supabase.storage.from("exercise-demos").getPublicUrl(path);
-  const mediaType=file.type.startsWith("video/")?"video":"image";
+  if(files.some(f=>f.size>25*1024*1024)){showMessage("existingExerciseMediaMessage","Cada arquivo deve ter no máximo 25 MB.");return;}
+  if(files.some(f=>!allowed.includes(f.type))){showMessage("existingExerciseMediaMessage","Use JPG, PNG, WEBP, GIF, MP4, WEBM ou MOV.");return;}
+  showMessage("existingExerciseMediaMessage","Enviando fotos/vídeos…");
+  const {data:current,error:readError}=await supabase.from("exercises").select("demo_media,demo_media_url,demo_media_type").eq("id",exerciseId).single();
+  if(readError){showMessage("existingExerciseMediaMessage","Não foi possível abrir o exercício: "+readError.message);return;}
+  let currentMedia=Array.isArray(current.demo_media)?current.demo_media:[];
+  if(!currentMedia.length&&current.demo_media_url){
+    currentMedia=[{url:current.demo_media_url,type:current.demo_media_type||"image"}];
+  }
+  const uploaded=[];
+  for(const file of files){
+    const ext=(file.name.split(".").pop()||"bin").toLowerCase().replace(/[^a-z0-9]/g,"");
+    const path=`${crypto.randomUUID()}.${ext}`;
+    const {error:uploadError}=await supabase.storage.from("exercise-demos").upload(path,file,{
+      cacheControl:"3600",upsert:false,contentType:file.type
+    });
+    if(uploadError){
+      if(uploaded.length) await supabase.storage.from("exercise-demos").remove(uploaded.map(x=>x.path));
+      showMessage("existingExerciseMediaMessage","Não foi possível enviar: "+uploadError.message);return;
+    }
+    const {data:publicData}=supabase.storage.from("exercise-demos").getPublicUrl(path);
+    uploaded.push({path,url:publicData.publicUrl,type:file.type.startsWith("video/")?"video":"image"});
+  }
+  const allMedia=[...currentMedia,...uploaded.map(({url,type})=>({url,type}))];
   const {error:updateError}=await supabase.from("exercises").update({
-    demo_media_url:publicData.publicUrl,demo_media_type:mediaType
+    demo_media:allMedia,
+    demo_media_url:allMedia[0]?.url||null,
+    demo_media_type:allMedia[0]?.type||null
   }).eq("id",exerciseId);
   if(updateError){
-    await supabase.storage.from("exercise-demos").remove([path]);
+    await supabase.storage.from("exercise-demos").remove(uploaded.map(x=>x.path));
     showMessage("existingExerciseMediaMessage","Não foi possível salvar no exercício: "+updateError.message);return;
   }
-  showMessage("existingExerciseMediaMessage","Demonstração salva! O aluno verá a mídia ao abrir os detalhes do exercício.");
+  showMessage("existingExerciseMediaMessage","Fotos e vídeos adicionados! O aluno verá todos ao abrir os detalhes.");
   $("existingExerciseMediaForm").reset();
 });
 

@@ -24,3 +24,6 @@
 
 .exercise-demo-media{display:block;width:100%;max-width:560px;max-height:420px;object-fit:contain;background:#090909;border:1px solid var(--line);border-radius:12px;margin:12px 0}
 input[type="file"]{padding:10px;background:#111}
+
+.exercise-media-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:12px 0}
+.exercise-media-gallery .exercise-demo-media{width:100%;max-width:none;max-height:360px;margin:0;object-fit:contain}
