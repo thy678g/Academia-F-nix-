@@ -27,3 +27,18 @@ input[type="file"]{padding:10px;background:#111}
 
 .exercise-media-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:12px 0}
 .exercise-media-gallery .exercise-demo-media{width:100%;max-width:none;max-height:360px;margin:0;object-fit:contain}
+
+
+/* Conclusão de treino e cartão de conquista para compartilhar */
+.day-card-done{border-color:#f47721;background:linear-gradient(145deg,#2b1c12,#191512)}
+.day-card-done small{color:#ffad70;font-weight:700}
+.complete-workout-btn{margin-top:20px}
+.achievement-card{position:relative;overflow:hidden;margin:18px 0 12px;padding:28px 20px 18px;text-align:center;border:1px solid #a95420;border-radius:18px;background:radial-gradient(ellipse at 50% 0%,#633016 0,transparent 58%),linear-gradient(150deg,#21150f,#101010 70%);box-shadow:0 16px 42px #0007}
+.achievement-spark{color:#ff9a45;font-size:28px;margin-bottom:8px}
+.achievement-kicker{font-family:Oswald,sans-serif;font-size:clamp(22px,6vw,32px);font-weight:700;color:#ff9a45;letter-spacing:1.2px}
+.achievement-name{font-family:Oswald,sans-serif;font-size:clamp(34px,9vw,54px);line-height:1.05;font-weight:700;text-transform:uppercase;margin:14px 0;color:#fff;overflow-wrap:anywhere}
+.achievement-phrase{font-family:Oswald,sans-serif;font-size:clamp(21px,5vw,29px);color:#ffb477;margin:12px 0}
+.achievement-card p{color:#e7ded5;font-size:14px;line-height:1.5;margin:10px auto 16px;max-width:300px}
+.achievement-card>strong{display:block;font-size:13px;letter-spacing:.5px;color:#fff}
+.achievement-card>small{display:block;margin-top:22px;color:#9a8e84;font-size:9px;letter-spacing:2.5px}
+.share-achievement-btn{margin-bottom:8px}

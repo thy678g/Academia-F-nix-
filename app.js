@@ -9,6 +9,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const $ = (id) => document.getElementById(id);
 let currentProfile = null;
 let exerciseCache = [];
+let completionCache = new Set();
 
 const weekdayNames = {1:"Segunda-feira",2:"Terça-feira",3:"Quarta-feira",4:"Quinta-feira",5:"Sexta-feira",6:"Sábado",7:"Domingo"};
 function showMessage(id, msg){ $(id).textContent = msg || ""; }
@@ -88,8 +89,14 @@ $("adminPlanSelect").addEventListener("change",()=>{
 async function loadWorkouts(){
   const {data: plans,error} = await supabase.from("workout_plans").select("id,title,weekday,notes,workout_items(id,order_index,sets,reps,load,rest_seconds,notes,exercises(id,name,muscle_group,instructions,safety_notes,stages,demo_media_url,demo_media_type,demo_media))").eq("student_id",currentProfile.id).eq("is_active",true).order("weekday");
   if(error){$("workouts").innerHTML=`<div class="empty">Não foi possível carregar os treinos: ${escapeHtml(error.message)}</div>`;return;}
+  const allItemIds=(plans||[]).flatMap(p=>(p.workout_items||[]).map(i=>i.id));
+  completionCache=new Set();
+  if(allItemIds.length){
+    const {data: completed}=await supabase.from("workout_completions").select("workout_item_id").eq("student_id",currentProfile.id).in("workout_item_id",allItemIds);
+    (completed||[]).forEach(row=>completionCache.add(row.workout_item_id));
+  }
   if(!plans?.length){$("workouts").innerHTML='<div class="empty">Seus treinos aparecerão aqui quando a professora fizer sua programação.</div>';return;}
-  $("workouts").innerHTML=plans.map(p=>`<button class="day-card" data-plan="${p.id}"><span class="day">${weekdayNames[p.weekday]||"TREINO"}</span><strong>${escapeHtml(p.title)}</strong><small>${(p.workout_items||[]).length} exercício(s) • Toque para abrir</small></button>`).join("");
+  $("workouts").innerHTML=plans.map(p=>{const items=p.workout_items||[];const done=items.length>0&&items.every(i=>completionCache.has(i.id));return `<button class="day-card ${done?'day-card-done':''}" data-plan="${p.id}"><span class="day">${weekdayNames[p.weekday]||"TREINO"}</span><strong>${escapeHtml(p.title)}</strong><small>${done?'✓ Treino concluído':`${items.length} exercício(s) • Toque para abrir`}</small></button>`}).join("");
   $("workouts").querySelectorAll("[data-plan]").forEach(btn=>btn.addEventListener("click",()=>showPlan(plans.find(p=>p.id===btn.dataset.plan))));
 }
 
@@ -122,7 +129,14 @@ function showPlan(plan){
       (ex.safety_notes?`<p><b>Atenção:</b> ${escapeHtml(ex.safety_notes)}</p>`:"")+
       `</div>`;
     return `<div class="exercise-card"><div class="exercise-row"><div><span class="badge">${i+1}. ${escapeHtml(ex.muscle_group||"EXERCÍCIO")}</span><h3>${escapeHtml(ex.name||"Exercício")}</h3><p class="muted">${it.sets?`${it.sets} série(s)`:""} ${it.reps?"• "+escapeHtml(it.reps):""} ${it.load?"• "+escapeHtml(it.load):""} ${it.rest_seconds!=null?"• descanso "+it.rest_seconds+"s":""}</p></div><button type="button" data-ex-toggle="${i}" aria-expanded="false">Ver detalhes</button></div>${details}</div>`;
-  }).join(""):'<div class="empty">A professora ainda não adicionou exercícios a este treino.</div>');
+  }).join(""):'<div class="empty">A professora ainda não adicionou exercícios a este treino.</div>')+
+  (items.length?`<button type="button" class="primary complete-workout-btn" id="completeWorkoutBtn">${items.every(it=>completionCache.has(it.id))?'Treino já concluído ✓':'Concluir treino'}</button>`:'');
+  const completeBtn=$("completeWorkoutBtn");
+  if(completeBtn){
+    const alreadyDone=items.every(it=>completionCache.has(it.id));
+    completeBtn.disabled=alreadyDone;
+    completeBtn.addEventListener("click",()=>completeWorkout(plan,items,completeBtn));
+  }
   $("exerciseDetail").querySelectorAll("[data-ex-toggle]").forEach(button=>button.addEventListener("click",()=>{
     const detail=$("exerciseInfo"+button.dataset.exToggle);
     if(!detail)return;
@@ -133,6 +147,50 @@ function showPlan(plan){
   }));
   $("exerciseDetail").scrollIntoView({behavior:"smooth",block:"start"});
 }
+
+async function completeWorkout(plan,items,button){
+  if(!currentProfile||currentProfile.role!=="student"||!items.length)return;
+  button.disabled=true;button.textContent="Registrando conclusão…";
+  const pending=items.filter(item=>!completionCache.has(item.id));
+  if(pending.length){
+    const rows=pending.map(item=>({workout_item_id:item.id,student_id:currentProfile.id,completed_at:new Date().toISOString(),notes:null}));
+    const {error}=await supabase.from("workout_completions").insert(rows);
+    if(error){button.disabled=false;button.textContent="Tentar novamente";alert("Não foi possível registrar o treino: "+error.message);return;}
+    pending.forEach(item=>completionCache.add(item.id));
+  }
+  const studentName=currentProfile.full_name||"Atleta";
+  const card=`<article class="achievement-card" id="achievementCard"><div class="achievement-spark">✦</div><div class="achievement-kicker">TREINO CONCLUÍDO! 🔥</div><div class="achievement-name">${escapeHtml(studentName)}</div><div class="achievement-phrase">1% melhor que ontem.</div><p>Um passo de cada vez. Uma evolução todos os dias.</p><strong>EU FIZ A MINHA PARTE HOJE. 💪</strong><small>FÊNIX ACADEMIA</small></article><button type="button" class="primary share-achievement-btn" id="shareAchievementBtn">Compartilhar no WhatsApp</button>`;
+  const old=$("achievementCard");if(old)old.remove();
+  button.insertAdjacentHTML("afterend",card);
+  button.textContent="Treino concluído ✓";
+  button.disabled=true;
+  $("shareAchievementBtn").addEventListener("click",async()=>{
+    const shareText=`${studentName}\nTREINO CONCLUÍDO! 🔥\n1% MELHOR QUE ONTEM.\nUm passo de cada vez. Uma evolução todos os dias.\nEU FIZ A MINHA PARTE HOJE. 💪\nFÊNIX ACADEMIA`;
+    try{
+      const canvas=document.createElement("canvas");canvas.width=1080;canvas.height=1350;
+      const ctx=canvas.getContext("2d");
+      const bg=ctx.createLinearGradient(0,0,1080,1350);bg.addColorStop(0,"#3a1d10");bg.addColorStop(.48,"#17110e");bg.addColorStop(1,"#090909");ctx.fillStyle=bg;ctx.fillRect(0,0,1080,1350);
+      ctx.strokeStyle="#f47721";ctx.lineWidth=4;ctx.strokeRect(34,34,1012,1282);
+      ctx.textAlign="center";ctx.fillStyle="#ff9a45";ctx.font="bold 76px Arial";ctx.fillText("✦",540,180);
+      ctx.font="bold 66px Arial";ctx.fillText("TREINO CONCLUÍDO!",540,330);ctx.fillText("🔥",540,420);
+      ctx.fillStyle="#ffffff";let name=studentName.toLocaleUpperCase("pt-BR");
+      let nameFont= name.length>22?58:name.length>15?72:92;ctx.font=`bold ${nameFont}px Arial`;
+      const words=name.split(/\s+/);let lines=[],line="";for(const word of words){const test=line?line+" "+word:word;if(ctx.measureText(test).width>900&&line){lines.push(line);line=word;}else line=test;}if(line)lines.push(line);
+      let y=570-(lines.length-1)*48;lines.forEach(txt=>{ctx.fillText(txt,540,y);y+=nameFont+18;});
+      ctx.fillStyle="#ffb477";ctx.font="bold 58px Arial";ctx.fillText("1% MELHOR QUE ONTEM.",540,820);
+      ctx.fillStyle="#eee4db";ctx.font="36px Arial";ctx.fillText("Um passo de cada vez.",540,920);ctx.fillText("Uma evolução todos os dias.",540,970);
+      ctx.fillStyle="#ffffff";ctx.font="bold 34px Arial";ctx.fillText("EU FIZ A MINHA PARTE HOJE. 💪",540,1100);
+      ctx.fillStyle="#a99b90";ctx.font="bold 24px Arial";ctx.fillText("FÊNIX ACADEMIA",540,1250);
+      const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/png"));
+      const file=new File([blob],"treino-concluido-fenix.png",{type:"image/png"});
+      if(navigator.share&&navigator.canShare?.({files:[file]})){await navigator.share({title:"Treino concluído — Fênix Academia",text:shareText,files:[file]});}
+      else if(navigator.share){await navigator.share({title:"Treino concluído — Fênix Academia",text:shareText});}
+      else{await navigator.clipboard.writeText(shareText);alert("Seu cartão está pronto na tela. A mensagem foi copiada para você compartilhar no Status do WhatsApp.");}
+    }catch(err){if(err?.name!=="AbortError")alert("Não foi possível compartilhar neste aparelho. O cartão continua disponível na tela.");}
+  });
+  await loadWorkouts();
+}
+
 function showExercise(ex){
   if(!ex)return;
   const stages=Array.isArray(ex.stages)?ex.stages:[];
