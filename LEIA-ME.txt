@@ -1,11 +1,15 @@
-FÊNIX ACADEMIA — GALERIA DE FOTOS E VÍDEOS
+FÊNIX ACADEMIA — ATUALIZAÇÃO DA ÁREA DA PROFESSORA
 
-Agora cada exercício pode ter VÁRIAS mídias ao mesmo tempo: várias fotos e vários vídeos.
-A professora pode anexar várias mídias ao cadastrar um exercício novo ou acrescentá-las a um exercício já existente.
-O aluno vê a galeria completa dentro de "Ver detalhes".
+Esta versão organiza o painel da professora com:
+- Menu de três traços no topo para acessar Alunos, Montar treinos, Biblioteca e Adicionar exercícios ao treino.
+- Lista de alunos com nome clicável para abrir telefone e situação do cadastro.
+- Biblioteca de exercícios em uma única seção, alternando entre Novo exercício e Fotos e vídeos de exercícios existentes.
+- Mantém os recursos anteriores de cadastro, treinos, galeria de fotos/vídeos e cartão de treino concluído.
 
-Formatos: JPG, PNG, WEBP, GIF, MP4, WEBM e MOV. Limite: 25 MB por arquivo.
-O Supabase já recebeu a coluna demo_media e o bucket público exercise-demos.
+PUBLICAÇÃO:
+1. Extraia este ZIP.
+2. Envie os arquivos da pasta extraída para a raiz do repositório GitHub, substituindo os arquivos de mesmo nome.
+3. Aguarde o Cloudflare Pages concluir o deploy.
+4. No celular, atualize o site; se necessário, feche e abra novamente.
 
-PUBLICAÇÃO
-Substitua os arquivos do site pelos arquivos deste pacote no repositório GitHub da Fênix e faça commit na branch main. Depois aguarde o Cloudflare Pages publicar e atualize o site.
+Não apague nem altere dados do Supabase. A atualização é apenas do frontend.

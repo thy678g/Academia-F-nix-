@@ -29,6 +29,7 @@ async function startSession(session){
   if(profileData.role === "admin"){
     $("adminView").classList.remove("hidden");
     $("adminBanner").classList.remove("hidden");
+    $("teacherMenuBtn").classList.remove("hidden");
     await loadAdmin();
   }
   await loadWorkouts();
@@ -37,7 +38,8 @@ async function startSession(session){
 async function loadAdmin(){
   const {data: students,error} = await supabase.from("profiles").select("id,full_name,phone,status").eq("role","student").order("full_name");
   if(error){$("studentsList").innerHTML=`<p class="muted">Não foi possível carregar os alunos: ${escapeHtml(error.message)}</p>`;return;}
-  $("studentsList").innerHTML = students.length ? students.map(s=>`<div class="student-row"><div><strong>${escapeHtml(s.full_name)}</strong><div class="muted">${escapeHtml(s.phone||"Telefone não informado")} • ${escapeHtml(s.status)}</div></div><button type="button" class="delete-student" data-delete-student="${s.id}" aria-label="Excluir ${escapeHtml(s.full_name)}">Excluir</button></div>`).join("") : '<div class="empty">Nenhum aluno cadastrado ainda.</div>';
+  $("studentsList").innerHTML = students.length ? students.map(s=>`<div class="student-card"><div class="student-card-top"><button type="button" class="student-name-button" data-student-details="${s.id}"><strong>${escapeHtml(s.full_name)}</strong><span>Ver informações　⌄</span></button><button type="button" class="delete-student" data-delete-student="${s.id}" aria-label="Excluir ${escapeHtml(s.full_name)}">Excluir</button></div><div class="student-details hidden" id="student-details-${s.id}"><div><small>WHATSAPP</small><strong>${escapeHtml(s.phone||"Não informado")}</strong></div><div><small>SITUAÇÃO</small><strong>${escapeHtml(s.status==="active"?"Ativo":"Bloqueado")}</strong></div></div></div>`).join("") : '<div class="empty">Nenhum aluno cadastrado ainda.</div>';
+  $("studentsList").querySelectorAll("[data-student-details]").forEach(button=>button.addEventListener("click",()=>{const details=$("student-details-"+button.dataset.studentDetails);const opening=details.classList.contains("hidden");details.classList.toggle("hidden");button.querySelector("span").textContent=opening?"Ocultar informações　⌃":"Ver informações　⌄";}));
   $("studentsList").querySelectorAll("[data-delete-student]").forEach(button=>button.addEventListener("click",async()=>{
     const studentId=button.dataset.deleteStudent;
     const student=students.find(s=>s.id===studentId);
@@ -347,11 +349,26 @@ $("workoutItemForm").addEventListener("submit",async e=>{
   await loadAdmin();
 });
 
+// Menu compacto da professora e navegação entre áreas do painel.
+$("teacherMenuBtn").addEventListener("click",()=>{
+  const nav=$("teacherNav"); const opening=nav.classList.contains("hidden");
+  nav.classList.toggle("hidden"); $("teacherMenuBtn").setAttribute("aria-expanded",String(opening));
+});
+$("teacherNav").querySelectorAll("a").forEach(link=>link.addEventListener("click",()=>{
+  $("teacherNav").classList.add("hidden"); $("teacherMenuBtn").setAttribute("aria-expanded","false");
+}));
+document.querySelectorAll("[data-exercise-mode]").forEach(button=>button.addEventListener("click",()=>{
+  const media=button.dataset.exerciseMode==="media";
+  $("newExercisePane").classList.toggle("hidden",media);
+  $("existingMediaPane").classList.toggle("hidden",!media);
+  document.querySelectorAll("[data-exercise-mode]").forEach(tab=>tab.classList.toggle("active",tab===button));
+}));
+
 supabase.auth.getSession().then(async({data:{session}})=>{
   if(session){try{await startSession(session);}catch(e){showMessage("loginMessage",e.message);}}
 });
 supabase.auth.onAuthStateChange(async(_event,session)=>{
-  if(!session){$("appView").classList.add("hidden");$("loginView").classList.remove("hidden");$("logoutBtn").classList.add("hidden");}
+  if(!session){$("appView").classList.add("hidden");$("loginView").classList.remove("hidden");$("logoutBtn").classList.add("hidden");$("teacherMenuBtn").classList.add("hidden");$("teacherNav").classList.add("hidden");}
 });
 
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));}

@@ -42,3 +42,27 @@ input[type="file"]{padding:10px;background:#111}
 .achievement-card>strong{display:block;font-size:13px;letter-spacing:.5px;color:#fff}
 .achievement-card>small{display:block;margin-top:22px;color:#9a8e84;font-size:9px;letter-spacing:2.5px}
 .share-achievement-btn{margin-bottom:8px}
+
+/* Navegação e organização da Área da Professora */
+.teacher-menu-btn{margin-left:auto;width:44px;height:44px;border:1px solid #70401f;border-radius:11px;background:#211811;color:#ffad70;font-size:25px;line-height:1;cursor:pointer}
+.topbar .ghost{margin-left:0}
+.teacher-nav{position:sticky;top:68px;z-index:4;max-width:940px;margin:10px auto 0;padding:12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;background:#191512;border:1px solid #70401f;border-radius:14px;box-shadow:0 12px 30px #0008}
+.teacher-nav a{display:block;padding:12px 10px;border-radius:9px;background:#25201b;color:#f4e8dc;text-decoration:none;font-size:13px;font-weight:700;text-align:center}
+.teacher-nav a:active,.teacher-nav a:hover{background:#633016;color:#fff}
+.admin-intro{padding:4px 0 12px}
+.admin-section{scroll-margin-top:90px}
+.admin-section>h2{margin-top:4px}
+.student-card{padding:13px;border:1px solid var(--line);border-radius:12px;background:#151515}
+.student-card-top{display:flex;align-items:center;gap:10px}
+.student-name-button{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:5px;text-align:left;border:0;background:transparent;color:var(--text);padding:5px;cursor:pointer}
+.student-name-button strong{font-size:17px}
+.student-name-button span{font-size:12px;color:#ffad70}
+.student-details{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 4px 2px;padding:12px;background:#211b17;border-radius:9px}
+.student-details div{display:grid;gap:5px;min-width:0}
+.student-details small{font-size:10px;letter-spacing:1px;color:#aaa49d}
+.student-details strong{font-size:13px;overflow-wrap:anywhere}
+.exercise-mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}
+.mode-tab{padding:12px 8px;border:1px solid #574333;border-radius:10px;background:#171411;color:#d8c8ba;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.mode-tab.active{background:#f47721;border-color:#f47721;color:#17110c}
+#newExercisePane,#existingMediaPane{padding:4px 2px 0}
+@media(max-width:560px){.teacher-nav{margin:8px 12px 0;top:68px}.student-details{grid-template-columns:1fr}.student-name-button strong{font-size:16px}}

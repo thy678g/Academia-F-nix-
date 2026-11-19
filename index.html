@@ -14,9 +14,13 @@
   <header class="topbar">
     <div class="brand-mark">✦</div>
     <div><strong>FÊNIX</strong><span> ACADEMIA</span></div>
+    <button id="teacherMenuBtn" class="teacher-menu-btn hidden" type="button" aria-label="Abrir menu da professora" aria-expanded="false">☰</button>
     <button id="logoutBtn" class="ghost hidden">Sair</button>
   </header>
 
+  <nav id="teacherNav" class="teacher-nav hidden" aria-label="Menu da professora">
+    <a href="#studentSection">Alunos</a><a href="#planSection">Montar treinos</a><a href="#exerciseLibrarySection">Biblioteca de exercícios</a><a href="#addToWorkoutSection">Adicionar ao treino</a>
+  </nav>
   <main class="shell">
     <section id="loginView" class="panel login-panel">
       <div class="eyebrow">FORÇA • FOCO • CONSTÂNCIA</div>
@@ -39,10 +43,14 @@
       </div>
       <div id="adminBanner" class="admin-banner hidden">PAINEL DA PROFESSORA</div>
       <div id="adminView" class="panel hidden">
+        <div class="admin-intro"><div class="eyebrow">GESTÃO DA ACADEMIA</div><h2>Painel da professora</h2><p class="muted">Escolha uma área pelo menu ☰. Tudo organizado em um só lugar.</p></div>
+        <section id="studentSection" class="admin-section">
         <h2>Alunos</h2>
-        <p class="muted">Contas já autorizadas no sistema.</p>
+        <p class="muted">Toque no nome para consultar os dados de cada aluno.</p>
         <div id="studentsList" class="stack"></div>
+        </section>
         <hr>
+        <section id="planSection" class="admin-section">
         <h2>Montar treino</h2>
         <form id="planForm" class="stack">
           <label>Aluno<select id="studentSelect" required><option value="">Selecione um aluno</option></select></label>
@@ -54,8 +62,13 @@
           <button class="primary" type="submit">Criar treino</button>
           <p id="planMessage" class="message"></p>
         </form>
+        </section>
         <hr>
-        <h2>Cadastrar exercício novo</h2>
+        <section id="exerciseLibrarySection" class="admin-section">
+        <h2>Biblioteca de exercícios</h2>
+        <p class="muted">Cadastre um exercício novo ou acrescente fotos e vídeos a um exercício que já existe.</p>
+        <div class="exercise-mode-tabs"><button type="button" class="mode-tab active" data-exercise-mode="new">＋ Novo exercício</button><button type="button" class="mode-tab" data-exercise-mode="media">＋ Fotos e vídeos</button></div>
+        <div id="newExercisePane">
         <p class="muted">A professora também pode criar exercícios próprios, além dos que já estão na biblioteca.</p>
         <form id="customExerciseForm" class="stack">
           <label>Nome do exercício<input id="customExerciseName" required placeholder="Ex.: Agachamento sumô com halter"></label>
@@ -69,8 +82,9 @@
           <button class="primary" type="submit">Salvar na biblioteca de exercícios</button>
           <p id="customExerciseMessage" class="message" aria-live="polite"></p>
         </form>
-        <hr>
-        <h2>Adicionar foto ou vídeo a um exercício existente</h2>
+        </div>
+        <div id="existingMediaPane" class="hidden">
+        <h3>Adicionar mídia a exercício existente</h3>
         <form id="existingExerciseMediaForm" class="stack">
           <label>Exercício da biblioteca<select id="existingExerciseMediaSelect" required><option value="">Selecione um exercício</option></select></label>
           <label>Foto ou vídeo demonstrativo<input id="existingExerciseMediaFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" multiple required></label>
@@ -78,7 +92,10 @@
           <button class="primary" type="submit">Salvar demonstração</button>
           <p id="existingExerciseMediaMessage" class="message" aria-live="polite"></p>
         </form>
+        </div>
+        </section>
         <hr>
+        <section id="addToWorkoutSection" class="admin-section">
         <h2>Adicionar exercícios aos treinos</h2>
         <p class="muted">Escolha um treino, selecione um exercício da biblioteca e informe as orientações.</p>
         <form id="workoutItemForm" class="stack">
@@ -93,6 +110,7 @@
           <p id="itemMessage" class="message" aria-live="polite"></p>
         </form>
         <div id="adminPlanItems" class="stack"></div>
+        </section>
       </div>
 
       <div class="section-head"><div><div class="eyebrow">FÊNIX ACADEMIA • LEILA</div><h2>Treinos da semana</h2></div></div>
