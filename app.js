@@ -24,6 +24,7 @@ async function startSession(session){
   $("appView").classList.remove("hidden");
   $("logoutBtn").classList.remove("hidden");
   $("userName").textContent = (profileData.full_name || "atleta").split(" ")[0];
+  $("welcomeRole").textContent = profileData.role === "admin" ? "ÁREA DA PROFESSORA" : "ÁREA DO ALUNO";
   if(profileData.role === "admin"){
     $("adminView").classList.remove("hidden");
     $("adminBanner").classList.remove("hidden");
@@ -159,3 +160,16 @@ if(inviteToken){
     history.replaceState({},"",location.pathname);
   });
 }
+
+
+// Botão para mostrar ou ocultar a senha digitada.
+document.querySelectorAll("[data-toggle-password]").forEach(button=>{
+  button.addEventListener("click",()=>{
+    const field=$(button.dataset.togglePassword);
+    if(!field)return;
+    const showing=field.type==="password";
+    field.type=showing?"text":"password";
+    button.setAttribute("aria-label",showing?"Ocultar senha":"Mostrar senha");
+    button.textContent=showing?"🙈":"👁️";
+  });
+});
