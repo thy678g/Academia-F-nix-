@@ -1,13 +1,15 @@
-FÊNIX ACADEMIA — CORREÇÃO DO LOGIN DOS ALUNOS
+FÊNIX ACADEMIA — PAINEL DE EXERCÍCIOS
 
-O que mudou:
-- O aluno continua digitando o WhatsApp (DDD + número) e a própria senha.
-- O app converte o WhatsApp em um identificador interno de autenticação por e-mail.
-- O login dos alunos não depende do provedor Phone/SMS nem de Twilio.
-- A professora continua entrando com o e-mail e a senha originais.
-- O convite é validado pela Edge Function claim-student-invite versão 3, já publicada no Supabase.
+Esta versão acrescenta ao painel da professora a possibilidade de:
+- selecionar um treino já criado;
+- escolher um exercício da biblioteca ativa;
+- informar séries, repetições, carga, descanso e observações;
+- salvar o exercício vinculado ao treino;
+- visualizar os exercícios já adicionados ao treino.
+
+O aluno verá os exercícios ao abrir o treino, conforme as políticas de acesso existentes no Supabase.
 
 PUBLICAÇÃO
-Substitua os arquivos deste pacote no repositório GitHub da Fênix e faça commit na branch main. O Cloudflare Pages deverá publicar a atualização automaticamente.
+Substitua os arquivos do site pelos arquivos deste pacote no repositório GitHub da Fênix e faça commit na branch main. O Cloudflare Pages deverá publicar a atualização automaticamente.
 
-Após publicar, abra https://academia-f-nix.pages.dev. Se aparecer a versão antiga, feche e abra novamente o navegador ou limpe os dados do site para atualizar o cache.
+Depois da publicação, entre como professora, abra o painel, escolha o treino e adicione um exercício. Em seguida, abra a conta do aluno para conferir.

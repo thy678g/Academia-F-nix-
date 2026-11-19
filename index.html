@@ -54,6 +54,21 @@
           <button class="primary" type="submit">Criar treino</button>
           <p id="planMessage" class="message"></p>
         </form>
+        <hr>
+        <h2>Adicionar exercícios aos treinos</h2>
+        <p class="muted">Escolha um treino, selecione os exercícios da biblioteca e informe as orientações.</p>
+        <form id="workoutItemForm" class="stack">
+          <label>Treino<select id="adminPlanSelect" required><option value="">Selecione um treino</option></select></label>
+          <label>Exercício<select id="adminExerciseSelect" required><option value="">Selecione um exercício</option></select></label>
+          <label>Séries<input id="itemSets" type="number" min="1" step="1" placeholder="Ex.: 3"></label>
+          <label>Repetições<input id="itemReps" type="text" placeholder="Ex.: 12 ou 10–12"></label>
+          <label>Carga<input id="itemLoad" type="text" placeholder="Ex.: 10 kg ou peso corporal"></label>
+          <label>Descanso (segundos)<input id="itemRest" type="number" min="0" step="1" placeholder="Ex.: 60"></label>
+          <label>Observações<textarea id="itemNotes" rows="2" placeholder="Orientações específicas (opcional)"></textarea></label>
+          <button class="primary" type="submit">Adicionar exercício ao treino</button>
+          <p id="itemMessage" class="message" aria-live="polite"></p>
+        </form>
+        <div id="adminPlanItems" class="stack"></div>
       </div>
 
       <div class="section-head"><div><div class="eyebrow">SUA ROTINA</div><h2>Treinos da semana</h2></div></div>

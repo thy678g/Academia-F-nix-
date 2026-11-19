@@ -50,7 +50,38 @@ async function loadAdmin(){
   $("studentSelect").innerHTML = '<option value="">Selecione um aluno</option>'+students.filter(s=>s.status==="active").map(s=>`<option value="${s.id}">${escapeHtml(s.full_name)}</option>`).join("");
   const {data: exs} = await supabase.from("exercises").select("id,name,muscle_group").eq("is_active",true).order("muscle_group").order("name");
   exerciseCache = exs || [];
+  $("adminExerciseSelect").innerHTML = '<option value="">Selecione um exercício</option>' +
+    exerciseCache.map(ex=>`<option value="${ex.id}">${escapeHtml(ex.name)} — ${escapeHtml(ex.muscle_group)}</option>`).join("");
+  await loadAdminWorkoutPlans(students);
 }
+
+async function loadAdminWorkoutPlans(students){
+  const {data: plans,error} = await supabase.from("workout_plans")
+    .select("id,title,weekday,student_id,workout_items(id,exercise_id,sets,reps,load,rest_seconds,notes,exercises(name))")
+    .eq("is_active",true).order("created_at",{ascending:false});
+  if(error){$("adminPlanSelect").innerHTML='<option value="">Não foi possível carregar os treinos</option>';return;}
+  const studentNames = new Map(students.map(s=>[s.id,s.full_name]));
+  $("adminPlanSelect").innerHTML = '<option value="">Selecione um treino</option>' +
+    (plans||[]).map(p=>`<option value="${p.id}">${escapeHtml(studentNames.get(p.student_id)||"Aluno")} — ${escapeHtml(p.title)} (${weekdayNames[p.weekday]||"Treino"})</option>`).join("");
+  if(plans?.length){
+    $("adminPlanSelect").value=plans[0].id;
+    renderAdminPlanItems(plans[0]);
+  }else{
+    $("adminPlanItems").innerHTML='<div class="empty">Crie um treino primeiro para adicionar exercícios.</div>';
+  }
+  $("adminPlanSelect").dataset.plans=JSON.stringify(plans||[]);
+}
+function renderAdminPlanItems(plan){
+  const items=plan?.workout_items||[];
+  $("adminPlanItems").innerHTML = `<h3>Exercícios neste treino</h3>` +
+    (items.length ? items.sort((a,b)=>a.order_index-b.order_index).map((it,i)=>
+      `<div class="student-row"><div><strong>${i+1}. ${escapeHtml(it.exercises?.name||"Exercício")}</strong><div class="muted">${it.sets||"—"} série(s) • ${escapeHtml(it.reps||"Repetições não informadas")} • ${escapeHtml(it.load||"Sem carga")} • descanso ${it.rest_seconds??"—"}s</div></div></div>`
+    ).join("") : '<div class="empty">Este treino ainda não tem exercícios.</div>');
+}
+$("adminPlanSelect").addEventListener("change",()=>{
+  const plans=JSON.parse($("adminPlanSelect").dataset.plans||"[]");
+  renderAdminPlanItems(plans.find(p=>p.id===$("adminPlanSelect").value));
+});
 
 async function loadWorkouts(){
   const {data: plans,error} = await supabase.from("workout_plans").select("id,title,weekday,notes,workout_items(id,order_index,sets,reps,load,rest_seconds,notes,exercises(id,name,muscle_group,instructions,safety_notes,stages))").eq("student_id",currentProfile.id).eq("is_active",true).order("weekday");
@@ -99,8 +130,37 @@ $("planForm").addEventListener("submit",async e=>{
   const studentId=$("studentSelect").value;
   const {data:plan,error}=await supabase.from("workout_plans").insert({student_id:studentId,title:$("planTitle").value.trim(),weekday:Number($("weekday").value),notes:$("planNotes").value.trim()||null,created_by:currentProfile.id}).select().single();
   if(error){showMessage("planMessage","Não foi possível criar: "+error.message);return;}
-  showMessage("planMessage","Treino criado! Para adicionar exercícios e séries, a próxima etapa do painel será ativada.");
+  showMessage("planMessage","Treino criado! Agora você já pode adicionar exercícios abaixo.");
   $("planTitle").value="";$("planNotes").value="";
+  await loadAdmin();
+});
+
+$("workoutItemForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const planId=$("adminPlanSelect").value;
+  const exerciseId=$("adminExerciseSelect").value;
+  if(!planId||!exerciseId){showMessage("itemMessage","Selecione o treino e o exercício.");return;}
+  showMessage("itemMessage","Adicionando exercício…");
+  const {count,error:countError}=await supabase.from("workout_items").select("id",{count:"exact",head:true}).eq("plan_id",planId);
+  if(countError){showMessage("itemMessage","Não foi possível consultar o treino: "+countError.message);return;}
+  const sets=$("itemSets").value.trim();
+  const rest=$("itemRest").value.trim();
+  const payload={
+    plan_id:planId,
+    exercise_id:exerciseId,
+    order_index:count||0,
+    sets:sets?Number(sets):null,
+    reps:$("itemReps").value.trim()||null,
+    load:$("itemLoad").value.trim()||null,
+    rest_seconds:rest?Number(rest):null,
+    notes:$("itemNotes").value.trim()||null
+  };
+  const {error}=await supabase.from("workout_items").insert(payload);
+  if(error){showMessage("itemMessage","Não foi possível adicionar: "+error.message);return;}
+  showMessage("itemMessage","Exercício adicionado ao treino!");
+  $("itemSets").value="";$("itemReps").value="";$("itemLoad").value="";
+  $("itemRest").value="";$("itemNotes").value="";
+  await loadAdmin();
 });
 
 supabase.auth.getSession().then(async({data:{session}})=>{
