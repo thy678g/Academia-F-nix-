@@ -93,3 +93,65 @@ supabase.auth.onAuthStateChange(async(_event,session)=>{
 });
 
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));}
+// CADASTRO DE ALUNOS - FÊNIX ACADEMIA
+const studentForm = document.createElement("form");
+studentForm.id = "studentInviteForm";
+studentForm.className = "stack";
+studentForm.innerHTML = `
+  <hr>
+  <h2>Cadastrar aluno</h2>
+  <label>Nome do aluno
+    <input id="newStudentName" required placeholder="Nome completo">
+  </label>
+  <label>E-mail
+    <input id="newStudentEmail" type="email" required placeholder="E-mail do aluno">
+  </label>
+  <label>WhatsApp
+    <input id="newStudentPhone" type="tel" required placeholder="DDD + número">
+  </label>
+  <button class="primary" type="submit">Gerar convite pelo WhatsApp</button>
+  <p id="studentInviteMessage" class="message"></p>
+`;
+
+$("studentsList").insertAdjacentElement("afterend", studentForm);
+
+studentForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  const name = $("newStudentName").value.trim();
+  const email = $("newStudentEmail").value.trim();
+  const phone = $("newStudentPhone").value.trim();
+
+  const message = $("studentInviteMessage");
+  message.textContent = "Gerando convite...";
+
+  const { data, error } = await supabase.functions.invoke(
+    "create-student-invite",
+    {
+      body: {
+        full_name: name,
+        email: email,
+        phone: phone
+      }
+    }
+  );
+
+  if (error || !data?.action_link) {
+    message.textContent =
+      data?.error || error?.message || "Não foi possível gerar o convite.";
+    return;
+  }
+
+  let number = phone.replace(/\D/g, "");
+  if (number.length === 10 || number.length === 11) {
+    number = "55" + number;
+  }
+
+  const text = `Olá, ${name}! Você foi convidado(a) para acessar a Fênix Academia. Abra este link para criar sua senha e entrar: ${data.action_link}`;
+
+  message.textContent = "Convite gerado. Abrindo o WhatsApp...";
+  window.open(
+    "https://wa.me/" + number + "?text=" + encodeURIComponent(text),
+    "_blank"
+  );
+});
