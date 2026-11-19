@@ -35,7 +35,17 @@ async function startSession(session){
 async function loadAdmin(){
   const {data: students,error} = await supabase.from("profiles").select("id,full_name,phone,status").eq("role","student").order("full_name");
   if(error){$("studentsList").innerHTML=`<p class="muted">Não foi possível carregar os alunos: ${escapeHtml(error.message)}</p>`;return;}
-  $("studentsList").innerHTML = students.length ? students.map(s=>`<div class="student-row"><strong>${escapeHtml(s.full_name)}</strong><div class="muted">${escapeHtml(s.phone||"Telefone não informado")} • ${escapeHtml(s.status)}</div></div>`).join("") : '<div class="empty">Nenhum aluno cadastrado ainda.</div>';
+  $("studentsList").innerHTML = students.length ? students.map(s=>`<div class="student-row"><div><strong>${escapeHtml(s.full_name)}</strong><div class="muted">${escapeHtml(s.phone||"Telefone não informado")} • ${escapeHtml(s.status)}</div></div><button type="button" class="delete-student" data-delete-student="${s.id}" aria-label="Excluir ${escapeHtml(s.full_name)}">Excluir</button></div>`).join("") : '<div class="empty">Nenhum aluno cadastrado ainda.</div>';
+  $("studentsList").querySelectorAll("[data-delete-student]").forEach(button=>button.addEventListener("click",async()=>{
+    const studentId=button.dataset.deleteStudent;
+    const student=students.find(s=>s.id===studentId);
+    if(!student)return;
+    if(!confirm(`Excluir ${student.full_name}? Esta ação também apaga os treinos e o histórico desse aluno. Não pode ser desfeita.`))return;
+    button.disabled=true;button.textContent="Excluindo…";
+    const {data,error}=await supabase.functions.invoke("delete-student",{body:{student_id:studentId}});
+    if(error||!data?.success){alert(data?.error||error?.message||"Não foi possível excluir o aluno.");button.disabled=false;button.textContent="Excluir";return;}
+    await loadAdmin();
+  }));
   $("studentSelect").innerHTML = '<option value="">Selecione um aluno</option>'+students.filter(s=>s.status==="active").map(s=>`<option value="${s.id}">${escapeHtml(s.full_name)}</option>`).join("");
   const {data: exs} = await supabase.from("exercises").select("id,name,muscle_group").eq("is_active",true).order("muscle_group").order("name");
   exerciseCache = exs || [];
