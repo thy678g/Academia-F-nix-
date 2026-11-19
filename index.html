@@ -55,8 +55,32 @@
           <p id="planMessage" class="message"></p>
         </form>
         <hr>
+        <h2>Cadastrar exercício novo</h2>
+        <p class="muted">A professora também pode criar exercícios próprios, além dos que já estão na biblioteca.</p>
+        <form id="customExerciseForm" class="stack">
+          <label>Nome do exercício<input id="customExerciseName" required placeholder="Ex.: Agachamento sumô com halter"></label>
+          <label>Grupo muscular<input id="customExerciseGroup" required placeholder="Ex.: Glúteos e pernas"></label>
+          <label>Como executar<textarea id="customExerciseInstructions" rows="3" required placeholder="Descreva o movimento passo a passo"></textarea></label>
+          <label>Cuidados e observações<textarea id="customExerciseSafety" rows="2" placeholder="Ex.: manter a coluna neutra (opcional)"></textarea></label>
+          <label>Foto ou vídeo demonstrativo (opcional)
+            <input id="customExerciseMedia" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime">
+          </label>
+          <p class="tiny">A professora pode anexar uma imagem ou vídeo do exercício. Limite: 25 MB.</p>
+          <button class="primary" type="submit">Salvar na biblioteca de exercícios</button>
+          <p id="customExerciseMessage" class="message" aria-live="polite"></p>
+        </form>
+        <hr>
+        <h2>Adicionar foto ou vídeo a um exercício existente</h2>
+        <form id="existingExerciseMediaForm" class="stack">
+          <label>Exercício da biblioteca<select id="existingExerciseMediaSelect" required><option value="">Selecione um exercício</option></select></label>
+          <label>Foto ou vídeo demonstrativo<input id="existingExerciseMediaFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" required></label>
+          <p class="tiny">Também é possível ilustrar os exercícios que já estavam na biblioteca. Limite: 25 MB.</p>
+          <button class="primary" type="submit">Salvar demonstração</button>
+          <p id="existingExerciseMediaMessage" class="message" aria-live="polite"></p>
+        </form>
+        <hr>
         <h2>Adicionar exercícios aos treinos</h2>
-        <p class="muted">Escolha um treino, selecione os exercícios da biblioteca e informe as orientações.</p>
+        <p class="muted">Escolha um treino, selecione um exercício da biblioteca e informe as orientações.</p>
         <form id="workoutItemForm" class="stack">
           <label>Treino<select id="adminPlanSelect" required><option value="">Selecione um treino</option></select></label>
           <label>Exercício<select id="adminExerciseSelect" required><option value="">Selecione um exercício</option></select></label>

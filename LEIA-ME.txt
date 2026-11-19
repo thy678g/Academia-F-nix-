@@ -1,15 +1,17 @@
-FÊNIX ACADEMIA — PAINEL DE EXERCÍCIOS
+FÊNIX ACADEMIA — FOTOS E VÍDEOS DOS EXERCÍCIOS
 
-Esta versão acrescenta ao painel da professora a possibilidade de:
-- selecionar um treino já criado;
-- escolher um exercício da biblioteca ativa;
-- informar séries, repetições, carga, descanso e observações;
-- salvar o exercício vinculado ao treino;
-- visualizar os exercícios já adicionados ao treino.
+A professora pode:
+- anexar foto ou vídeo ao cadastrar um exercício próprio;
+- anexar ou substituir a demonstração de qualquer exercício já existente na biblioteca;
+- usar imagens JPG, PNG, WEBP, GIF e vídeos MP4, WEBM ou MOV;
+- enviar arquivos de até 25 MB.
 
-O aluno verá os exercícios ao abrir o treino, conforme as políticas de acesso existentes no Supabase.
+Quando o aluno abrir os detalhes do exercício, a imagem ou o vídeo será exibido junto às instruções.
+
+CONFIGURAÇÃO JÁ FEITA NO SUPABASE
+- Bucket público exercise-demos criado para exibição das demonstrações.
+- Upload, alteração e exclusão protegidos para contas de administradora/professora.
+- Colunas demo_media_url e demo_media_type adicionadas à tabela exercises.
 
 PUBLICAÇÃO
 Substitua os arquivos do site pelos arquivos deste pacote no repositório GitHub da Fênix e faça commit na branch main. O Cloudflare Pages deverá publicar a atualização automaticamente.
-
-Depois da publicação, entre como professora, abra o painel, escolha o treino e adicione um exercício. Em seguida, abra a conta do aluno para conferir.
