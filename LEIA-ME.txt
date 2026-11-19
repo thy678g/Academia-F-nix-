@@ -1,22 +1,13 @@
-FÊNIX ACADEMIA — PRIMEIRA VERSÃO PWA
+FÊNIX ACADEMIA — CORREÇÃO DO LOGIN DOS ALUNOS
 
-O que já está preparado:
-- Interface responsiva em português, preto e laranja.
-- Manifesto e service worker para instalação como aplicativo pelo navegador.
-- Login pelo Supabase Auth.
-- Leitura de perfil, treinos e exercícios conforme as políticas RLS existentes.
-- Área administrativa básica para listar alunos e criar planos de treino.
-
-CONFIGURAÇÃO
-O app já aponta para o projeto Supabase configurado anteriormente e usa a chave pública publishable/anon. Não coloque a chave service_role em arquivos do navegador.
-
-IMPORTANTE — O QUE AINDA NÃO ESTÁ PRONTO
-- Não existe usuário administrador criado ainda.
-- O fluxo seguro de convite/cadastro de alunos precisa de uma função de servidor para validar convites e criar contas. Não habilite cadastro público aberto.
-- O formulário administrativo cria o plano, mas a inclusão de exercícios/séries no plano será concluída na próxima etapa.
-- A demonstração com a mascote original precisa da imagem oficial enviada pela proprietária; não foi substituída por personagem genérico.
-- Antes de entregar a alunos, testar login, RLS, convites, criação de treinos e acessibilidade.
-- Gratuidade depende dos limites e políticas dos provedores; não há garantia de custo zero para sempre.
+O que mudou:
+- O aluno continua digitando o WhatsApp (DDD + número) e a própria senha.
+- O app converte o WhatsApp em um identificador interno de autenticação por e-mail.
+- O login dos alunos não depende do provedor Phone/SMS nem de Twilio.
+- A professora continua entrando com o e-mail e a senha originais.
+- O convite é validado pela Edge Function claim-student-invite versão 3, já publicada no Supabase.
 
 PUBLICAÇÃO
-Este é um site estático. Pode ser publicado em hospedagem estática com HTTPS. Para instalar no celular, abrir o link no navegador e escolher “Adicionar à tela inicial” / “Instalar app”.
+Substitua os arquivos deste pacote no repositório GitHub da Fênix e faça commit na branch main. O Cloudflare Pages deverá publicar a atualização automaticamente.
+
+Após publicar, abra https://academia-f-nix.pages.dev. Se aparecer a versão antiga, feche e abra novamente o navegador ou limpe os dados do site para atualizar o cache.

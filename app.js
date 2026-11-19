@@ -83,9 +83,11 @@ $("loginForm").addEventListener("submit",async e=>{
   e.preventDefault();showMessage("loginMessage","Entrando…");
   const loginId=$("loginId").value.trim();
   const password=$("password").value;
+  // Alunos informam o WhatsApp, mas autenticam por um e-mail interno
+  // determinístico. Assim, o login não depende do provedor de SMS/Phone.
   const credentials = loginId.includes("@")
     ? { email: loginId.toLowerCase(), password }
-    : { phone: normalizePhone(loginId), password };
+    : { email: phoneLoginEmail(loginId), password };
   const {data,error}=await supabase.auth.signInWithPassword(credentials);
   if(error){showMessage("loginMessage",error.message);return;}
   try{await startSession(data.session);}catch(err){await supabase.auth.signOut();showMessage("loginMessage",err.message);}
@@ -113,6 +115,11 @@ function normalizePhone(value){
   let digits=String(value||"").replace(/\D/g,"");
   if(digits.length===10||digits.length===11) digits="55"+digits;
   return digits.startsWith("+")?digits:"+"+digits;
+}
+function phoneLoginEmail(value){
+  const phone=normalizePhone(value);
+  const digits=phone.replace(/\D/g,"");
+  return `aluno.${digits}@acesso.fenixacademia.com`;
 }
 
 // Cadastro de alunos: nome e WhatsApp, sem exigir e-mail.
