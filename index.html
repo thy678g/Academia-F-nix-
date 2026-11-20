@@ -122,6 +122,36 @@
     </section>
   </main>
   <footer>FÊNIX ACADEMIA <span>•</span> MOVA-SE COM PROPÓSITO</footer>
+
+  <script>
+    // Diagnóstico visível caso o módulo principal não carregue ou falhe.
+    window.addEventListener("error", function (event) {
+      var message = event.message || "Não foi possível carregar um arquivo do aplicativo.";
+      var target = event.target;
+      if (target && target.tagName === "SCRIPT") {
+        message = "Falha ao carregar o aplicativo (app.js ou uma dependência). Verifique a conexão e recarregue a página.";
+      }
+      var box = document.getElementById("loginMessage");
+      if (box) box.textContent = "A Fênix não conseguiu iniciar: " + message;
+    }, true);
+    window.addEventListener("unhandledrejection", function (event) {
+      var box = document.getElementById("loginMessage");
+      if (box) box.textContent = "Falha ao iniciar a Fênix: " +
+        (event.reason && event.reason.message ? event.reason.message : String(event.reason || "erro desconhecido"));
+    });
+    window.addEventListener("DOMContentLoaded", function () {
+      var form = document.getElementById("loginForm");
+      if (form) form.addEventListener("submit", function () {
+        var box = document.getElementById("loginMessage");
+        if (box && !box.textContent) {
+          window.setTimeout(function () {
+            if (!box.textContent) box.textContent = "O aplicativo ainda não respondeu. Recarregue a página; se persistir, envie esta tela para a professora.";
+          }, 1800);
+        }
+      });
+    });
+  </script>
+
   <script type="module" src="./app.js"></script>
 </body>
 </html>
