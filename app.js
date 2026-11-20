@@ -100,7 +100,7 @@ async function loadAdmin(){
 
 async function loadAdminWorkoutPlans(students){
   const {data: plans,error} = await supabase.from("workout_plans")
-    .select("id,title,weekday,student_id,workout_items(id,exercise_id,sets,reps,load,load_type,rest_seconds,notes,exercises(name))")
+    .select("id,title,weekday,student_id,workout_items(id,order_index,exercise_id,sets,reps,load,load_type,rest_seconds,notes,exercises(name))")
     .eq("is_active",true).order("created_at",{ascending:false});
   if(error){$("adminPlanSelect").innerHTML='<option value="">Não foi possível carregar os treinos</option>';return;}
   const studentNames = new Map(students.map(s=>[s.id,s.full_name]));
