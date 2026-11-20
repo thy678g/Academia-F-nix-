@@ -42,6 +42,7 @@
         <div class="flame">✦</div>
       </div>
       <div id="adminBanner" class="admin-banner hidden">PAINEL DA PROFESSORA</div>
+      <div id="tuitionAlert" class="tuition-alert hidden" role="status" aria-live="polite"></div>
       <div id="adminView" class="panel hidden">
         <div class="admin-intro"><div class="eyebrow">GESTÃO DA ACADEMIA</div><h2>Painel da professora</h2><p class="muted">Escolha uma área pelo menu ☰. Tudo organizado em um só lugar.</p></div>
         <section id="studentSection" class="admin-section">
@@ -103,7 +104,8 @@
           <label>Exercício<select id="adminExerciseSelect" required><option value="">Selecione um exercício</option></select></label>
           <label>Séries<input id="itemSets" type="number" min="1" step="1" placeholder="Ex.: 3"></label>
           <label>Repetições<input id="itemReps" type="text" placeholder="Ex.: 12 ou 10–12"></label>
-          <label>Carga<input id="itemLoad" type="text" placeholder="Ex.: 10 kg ou peso corporal"></label>
+          <label>Equipamento da carga<select id="itemLoadType"><option value="dumbbell">Halter</option><option value="barbell">Barra</option><option value="plate">Anilha</option><option value="machine">Máquina</option><option value="bodyweight">Peso corporal</option><option value="other">Outro</option></select></label>
+          <label>Peso / carga<input id="itemLoad" type="text" placeholder="Ex.: 10 kg cada halter, 20 kg na barra"></label>
           <label>Descanso (segundos)<input id="itemRest" type="number" min="0" step="1" placeholder="Ex.: 60"></label>
           <label>Observações<textarea id="itemNotes" rows="2" placeholder="Orientações específicas (opcional)"></textarea></label>
           <button class="primary" type="submit">Adicionar exercício ao treino</button>

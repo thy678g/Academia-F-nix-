@@ -1,15 +1,12 @@
-FÊNIX ACADEMIA — ATUALIZAÇÃO DA ÁREA DA PROFESSORA
+FÊNIX ACADEMIA — ATUALIZAÇÃO DE CARGA E ALERTAS
 
-Esta versão organiza o painel da professora com:
-- Menu de três traços no topo para acessar Alunos, Montar treinos, Biblioteca e Adicionar exercícios ao treino.
-- Lista de alunos com nome clicável para abrir telefone e situação do cadastro.
-- Biblioteca de exercícios em uma única seção, alternando entre Novo exercício e Fotos e vídeos de exercícios existentes.
-- Mantém os recursos anteriores de cadastro, treinos, galeria de fotos/vídeos e cartão de treino concluído.
+Esta versão acrescenta:
+- Tipo de equipamento para carga: halter, barra, anilha, máquina, peso corporal ou outro.
+- Campo para informar o peso/carga (ex.: 10 kg cada halter; 20 kg na barra).
+- Avisos de mensalidade no painel da professora e na área do aluno quando o vencimento estiver a até 5 dias ou atrasado.
 
-PUBLICAÇÃO:
-1. Extraia este ZIP.
-2. Envie os arquivos da pasta extraída para a raiz do repositório GitHub, substituindo os arquivos de mesmo nome.
-3. Aguarde o Cloudflare Pages concluir o deploy.
-4. No celular, atualize o site; se necessário, feche e abra novamente.
-
-Não apague nem altere dados do Supabase. A atualização é apenas do frontend.
+IMPORTANTE:
+1. O banco Supabase já recebeu a coluna workout_items.load_type.
+2. Extraia o ZIP e substitua os arquivos do site pelos arquivos desta pasta na raiz do repositório GitHub.
+3. Aguarde o deploy do Cloudflare Pages.
+4. Os alertas aparecem quando a pessoa entra/abre o app; não são notificações push com o app fechado.

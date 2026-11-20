@@ -15,6 +15,25 @@ const weekdayNames = {1:"Segunda-feira",2:"Terça-feira",3:"Quarta-feira",4:"Qui
 function showMessage(id, msg){ $(id).textContent = msg || ""; }
 function escapeHtml(value=""){return String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 
+function tuitionAlertMarkup(rows, isTeacher=false){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const alerts=(rows||[]).filter(s=>s.tuition_due_date && !(s.tuition_paid_at && new Date(s.tuition_paid_at+"T12:00:00").getFullYear()===new Date(s.tuition_due_date+"T00:00:00").getFullYear() && new Date(s.tuition_paid_at+"T12:00:00").getMonth()===new Date(s.tuition_due_date+"T00:00:00").getMonth())) .map(s=>{
+    const due=new Date(s.tuition_due_date+"T00:00:00"); const days=Math.ceil((due-today)/86400000);
+    return {...s,days};
+  }).filter(s=>s.days<=5);
+  if(!alerts.length)return "";
+  const lines=alerts.map(s=>{
+    const status=s.days<0?`Vencida há ${Math.abs(s.days)} dia(s)`:s.days===0?"Vence hoje":`Vence em ${s.days} dia(s)`;
+    return `<li>${isTeacher?`<strong>${escapeHtml(s.full_name)}</strong> — `:""}${status} (${new Date(s.tuition_due_date+"T12:00:00").toLocaleDateString("pt-BR")})</li>`;
+  }).join("");
+  return `<strong>⚠️ ${isTeacher?"Alertas de mensalidade":"Lembrete de mensalidade"}</strong><ul>${lines}</ul>`;
+}
+function renderStudentTuitionAlert(){
+  const el=$("tuitionAlert"); if(!el)return;
+  if(currentProfile?.role==="student") el.innerHTML=tuitionAlertMarkup([currentProfile],false);
+  el.classList.toggle("hidden",!el.innerHTML);
+}
+
 async function startSession(session){
   const {data: profileData,error} = await supabase.from("profiles").select("*").eq("id",session.user.id).maybeSingle();
   if(error) throw error;
@@ -26,6 +45,7 @@ async function startSession(session){
   $("logoutBtn").classList.remove("hidden");
   $("userName").textContent = (profileData.full_name || "atleta").split(" ")[0];
   $("welcomeRole").textContent = profileData.role === "admin" ? "ÁREA DA PROFESSORA" : "ÁREA DO ALUNO";
+  if(profileData.role === "student") renderStudentTuitionAlert();
   if(profileData.role === "admin"){
     $("adminView").classList.remove("hidden");
     $("adminBanner").classList.remove("hidden");
@@ -36,10 +56,28 @@ async function startSession(session){
 }
 
 async function loadAdmin(){
-  const {data: students,error} = await supabase.from("profiles").select("id,full_name,phone,status").eq("role","student").order("full_name");
+  const {data: students,error} = await supabase.from("profiles").select("id,full_name,phone,status,weight_kg,monthly_fee,tuition_due_date,tuition_paid_at").eq("role","student").order("full_name");
   if(error){$("studentsList").innerHTML=`<p class="muted">Não foi possível carregar os alunos: ${escapeHtml(error.message)}</p>`;return;}
-  $("studentsList").innerHTML = students.length ? students.map(s=>`<div class="student-card"><div class="student-card-top"><button type="button" class="student-name-button" data-student-details="${s.id}"><strong>${escapeHtml(s.full_name)}</strong><span>Ver informações　⌄</span></button><button type="button" class="delete-student" data-delete-student="${s.id}" aria-label="Excluir ${escapeHtml(s.full_name)}">Excluir</button></div><div class="student-details hidden" id="student-details-${s.id}"><div><small>WHATSAPP</small><strong>${escapeHtml(s.phone||"Não informado")}</strong></div><div><small>SITUAÇÃO</small><strong>${escapeHtml(s.status==="active"?"Ativo":"Bloqueado")}</strong></div></div></div>`).join("") : '<div class="empty">Nenhum aluno cadastrado ainda.</div>';
+  $("tuitionAlert").innerHTML=tuitionAlertMarkup(students,true); $("tuitionAlert").classList.toggle("hidden",!$("tuitionAlert").innerHTML);
+  $("studentsList").innerHTML = students.length ? students.map(s=>`<div class="student-card"><div class="student-card-top"><button type="button" class="student-name-button" data-student-details="${s.id}"><strong>${escapeHtml(s.full_name)}</strong><span>Ver informações　⌄</span></button><button type="button" class="delete-student" data-delete-student="${s.id}" aria-label="Excluir ${escapeHtml(s.full_name)}">Excluir</button></div><div class="student-details hidden" id="student-details-${s.id}"><div><small>WHATSAPP</small><strong>${escapeHtml(s.phone||"Não informado")}</strong></div><div><small>SITUAÇÃO</small><strong>${escapeHtml(s.status==="active"?"Ativo":"Bloqueado")}</strong></div><div class="student-management"><label>Peso atual (kg)<input type="number" min="0" max="500" step="0.1" data-weight="${s.id}" value="${s.weight_kg??""}" placeholder="Ex.: 68,5"></label><label>Mensalidade (R$)<input type="number" min="0" step="0.01" data-fee="${s.id}" value="${s.monthly_fee??""}" placeholder="Ex.: 120,00"></label><label>Vencimento<input type="date" data-due="${s.id}" value="${s.tuition_due_date||""}"></label><div class="tuition-status"><small>STATUS DA MENSALIDADE</small><strong>${s.tuition_paid_at&&s.tuition_due_date&&new Date(s.tuition_paid_at).getFullYear()===new Date(s.tuition_due_date).getFullYear()&&new Date(s.tuition_paid_at).getMonth()===new Date(s.tuition_due_date).getMonth()?"Pago neste mês":"Pendente"}</strong><span>Último pagamento: ${s.tuition_paid_at?new Date(s.tuition_paid_at+"T12:00:00").toLocaleDateString("pt-BR"):"Não registrado"}</span></div><button type="button" class="primary student-save-btn" data-save-student="${s.id}">Salvar informações</button><button type="button" class="student-paid-btn" data-paid-student="${s.id}">Registrar pagamento recebido</button><p class="message" data-student-message="${s.id}" aria-live="polite"></p></div></div></div>`).join("") : '<div class="empty">Nenhum aluno cadastrado ainda.</div>';
   $("studentsList").querySelectorAll("[data-student-details]").forEach(button=>button.addEventListener("click",()=>{const details=$("student-details-"+button.dataset.studentDetails);const opening=details.classList.contains("hidden");details.classList.toggle("hidden");button.querySelector("span").textContent=opening?"Ocultar informações　⌃":"Ver informações　⌄";}));
+  $("studentsList").querySelectorAll("[data-save-student]").forEach(button=>button.addEventListener("click",async()=>{
+    const id=button.dataset.saveStudent; const msg=document.querySelector(`[data-student-message="${id}"]`);
+    const weight=document.querySelector(`[data-weight="${id}"]`).value;
+    const fee=document.querySelector(`[data-fee="${id}"]`).value;
+    const due=document.querySelector(`[data-due="${id}"]`).value;
+    button.disabled=true; msg.textContent="Salvando…";
+    const {error}=await supabase.from("profiles").update({weight_kg:weight===""?null:Number(weight),monthly_fee:fee===""?null:Number(fee),tuition_due_date:due||null}).eq("id",id);
+    button.disabled=false; msg.textContent=error?`Não foi possível salvar: ${error.message}`:"Informações salvas!";
+    if(!error) await loadAdmin();
+  }));
+  $("studentsList").querySelectorAll("[data-paid-student]").forEach(button=>button.addEventListener("click",async()=>{
+    const id=button.dataset.paidStudent; const msg=document.querySelector(`[data-student-message="${id}"]`);
+    button.disabled=true; msg.textContent="Registrando pagamento…";
+    const {error}=await supabase.from("profiles").update({tuition_paid_at:new Date().toISOString().slice(0,10)}).eq("id",id);
+    button.disabled=false; msg.textContent=error?`Não foi possível registrar: ${error.message}`:"Pagamento registrado!";
+    if(!error) await loadAdmin();
+  }));
   $("studentsList").querySelectorAll("[data-delete-student]").forEach(button=>button.addEventListener("click",async()=>{
     const studentId=button.dataset.deleteStudent;
     const student=students.find(s=>s.id===studentId);
@@ -62,7 +100,7 @@ async function loadAdmin(){
 
 async function loadAdminWorkoutPlans(students){
   const {data: plans,error} = await supabase.from("workout_plans")
-    .select("id,title,weekday,student_id,workout_items(id,exercise_id,sets,reps,load,rest_seconds,notes,exercises(name))")
+    .select("id,title,weekday,student_id,workout_items(id,exercise_id,sets,reps,load,load_type,rest_seconds,notes,exercises(name))")
     .eq("is_active",true).order("created_at",{ascending:false});
   if(error){$("adminPlanSelect").innerHTML='<option value="">Não foi possível carregar os treinos</option>';return;}
   const studentNames = new Map(students.map(s=>[s.id,s.full_name]));
@@ -80,7 +118,7 @@ function renderAdminPlanItems(plan){
   const items=plan?.workout_items||[];
   $("adminPlanItems").innerHTML = `<h3>Exercícios neste treino</h3>` +
     (items.length ? items.sort((a,b)=>a.order_index-b.order_index).map((it,i)=>
-      `<div class="student-row"><div><strong>${i+1}. ${escapeHtml(it.exercises?.name||"Exercício")}</strong><div class="muted">${it.sets||"—"} série(s) • ${escapeHtml(it.reps||"Repetições não informadas")} • ${escapeHtml(it.load||"Sem carga")} • descanso ${it.rest_seconds??"—"}s</div></div></div>`
+      `<div class="student-row"><div><strong>${i+1}. ${escapeHtml(it.exercises?.name||"Exercício")}</strong><div class="muted">${it.sets||"—"} série(s) • ${escapeHtml(it.reps||"Repetições não informadas")} • ${escapeHtml(it.load?`${({dumbbell:"Halter",barbell:"Barra",plate:"Anilha",machine:"Máquina",bodyweight:"Peso corporal",other:"Carga"}[it.load_type]||"Carga")}: "Sem carga")} ${escapeHtml(it.load||"")} • descanso ${it.rest_seconds??"—"}s</div></div></div>`
     ).join("") : '<div class="empty">Este treino ainda não tem exercícios.</div>');
 }
 $("adminPlanSelect").addEventListener("change",()=>{
@@ -89,7 +127,7 @@ $("adminPlanSelect").addEventListener("change",()=>{
 });
 
 async function loadWorkouts(){
-  const {data: plans,error} = await supabase.from("workout_plans").select("id,title,weekday,notes,workout_items(id,order_index,sets,reps,load,rest_seconds,notes,exercises(id,name,muscle_group,instructions,safety_notes,stages,demo_media_url,demo_media_type,demo_media))").eq("student_id",currentProfile.id).eq("is_active",true).order("weekday");
+  const {data: plans,error} = await supabase.from("workout_plans").select("id,title,weekday,notes,workout_items(id,order_index,sets,reps,load,load_type,rest_seconds,notes,exercises(id,name,muscle_group,instructions,safety_notes,stages,demo_media_url,demo_media_type,demo_media))").eq("student_id",currentProfile.id).eq("is_active",true).order("weekday");
   if(error){$("workouts").innerHTML=`<div class="empty">Não foi possível carregar os treinos: ${escapeHtml(error.message)}</div>`;return;}
   const allItemIds=(plans||[]).flatMap(p=>(p.workout_items||[]).map(i=>i.id));
   completionCache=new Set();
@@ -130,7 +168,7 @@ function showPlan(plan){
       stages.map((s,n)=>`<p><b>Etapa ${n+1}:</b> ${escapeHtml(typeof s==="string"?s:(s.title||s.description||JSON.stringify(s)))}</p>`).join("")+
       (ex.safety_notes?`<p><b>Atenção:</b> ${escapeHtml(ex.safety_notes)}</p>`:"")+
       `</div>`;
-    return `<div class="exercise-card"><div class="exercise-row"><div><span class="badge">${i+1}. ${escapeHtml(ex.muscle_group||"EXERCÍCIO")}</span><h3>${escapeHtml(ex.name||"Exercício")}</h3><p class="muted">${it.sets?`${it.sets} série(s)`:""} ${it.reps?"• "+escapeHtml(it.reps):""} ${it.load?"• "+escapeHtml(it.load):""} ${it.rest_seconds!=null?"• descanso "+it.rest_seconds+"s":""}</p></div><button type="button" data-ex-toggle="${i}" aria-expanded="false">Ver detalhes</button></div>${details}</div>`;
+    return `<div class="exercise-card"><div class="exercise-row"><div><span class="badge">${i+1}. ${escapeHtml(ex.muscle_group||"EXERCÍCIO")}</span><h3>${escapeHtml(ex.name||"Exercício")}</h3><p class="muted">${it.sets?`${it.sets} série(s)`:""} ${it.reps?"• "+escapeHtml(it.reps):""} ${it.load?"• "+escapeHtml(({dumbbell:"Halter",barbell:"Barra",plate:"Anilha",machine:"Máquina",bodyweight:"Peso corporal",other:"Carga"}[it.load_type]||"Carga")+": "+it.load):""} ${it.rest_seconds!=null?"• descanso "+it.rest_seconds+"s":""}</p></div><button type="button" data-ex-toggle="${i}" aria-expanded="false">Ver detalhes</button></div>${details}</div>`;
   }).join(""):'<div class="empty">A professora ainda não adicionou exercícios a este treino.</div>')+
   (items.length?`<button type="button" class="primary complete-workout-btn" id="completeWorkoutBtn">${items.every(it=>completionCache.has(it.id))?'Treino já concluído ✓':'Concluir treino'}</button>`:'');
   const completeBtn=$("completeWorkoutBtn");
@@ -338,13 +376,14 @@ $("workoutItemForm").addEventListener("submit",async e=>{
     sets:sets?Number(sets):null,
     reps:$("itemReps").value.trim()||null,
     load:$("itemLoad").value.trim()||null,
+    load_type:$("itemLoadType").value,
     rest_seconds:rest?Number(rest):null,
     notes:$("itemNotes").value.trim()||null
   };
   const {error}=await supabase.from("workout_items").insert(payload);
   if(error){showMessage("itemMessage","Não foi possível adicionar: "+error.message);return;}
   showMessage("itemMessage","Exercício adicionado ao treino!");
-  $("itemSets").value="";$("itemReps").value="";$("itemLoad").value="";
+  $("itemSets").value="";$("itemReps").value="";$("itemLoad").value="";$("itemLoadType").value="dumbbell";
   $("itemRest").value="";$("itemNotes").value="";
   await loadAdmin();
 });
@@ -356,7 +395,13 @@ $("teacherMenuBtn").addEventListener("click",()=>{
 });
 $("teacherNav").querySelectorAll("a").forEach(link=>link.addEventListener("click",()=>{
   $("teacherNav").classList.add("hidden"); $("teacherMenuBtn").setAttribute("aria-expanded","false");
+  const target=link.getAttribute("href");
+  document.querySelectorAll("#adminView .admin-section").forEach(section=>section.classList.toggle("hidden", "#"+section.id!==target));
+  document.querySelector(target)?.scrollIntoView({behavior:"smooth",block:"start"});
 }));
+// Mostra apenas a área de alunos ao entrar; as demais ficam acessíveis pelo menu.
+function showTeacherSection(id){document.querySelectorAll("#adminView .admin-section").forEach(section=>section.classList.toggle("hidden",section.id!==id));}
+showTeacherSection("studentSection");
 document.querySelectorAll("[data-exercise-mode]").forEach(button=>button.addEventListener("click",()=>{
   const media=button.dataset.exerciseMode==="media";
   $("newExercisePane").classList.toggle("hidden",media);
