@@ -253,7 +253,7 @@ $("loginForm").addEventListener("submit",async e=>{
     : { email: phoneLoginEmail(loginId), password };
   const {data,error}=await supabase.auth.signInWithPassword(credentials);
   if(error){showMessage("loginMessage",error.message);return;}
-  try{await startSession(data.session);}catch(err){await supabase.auth.signOut();showMessage("loginMessage",err.message);}
+  try{await startSession(data.session);}catch(err){console.error("Falha ao abrir a área autenticada:",err);showMessage("loginMessage","Login realizado, mas não foi possível carregar a área: "+(err?.message||"erro inesperado")+". Sua sessão foi preservada; tente atualizar a página.");}
 });
 $("logoutBtn").addEventListener("click",async()=>{await supabase.auth.signOut();location.reload();});
 
@@ -410,7 +410,7 @@ document.querySelectorAll("[data-exercise-mode]").forEach(button=>button.addEven
 }));
 
 supabase.auth.getSession().then(async({data:{session}})=>{
-  if(session){try{await startSession(session);}catch(e){showMessage("loginMessage",e.message);}}
+  if(session){try{await startSession(session);}catch(e){console.error("Falha ao restaurar sessão:",e);showMessage("loginMessage","Sua sessão continua ativa, mas a área não carregou: "+(e?.message||"erro inesperado")+". Atualize a página para tentar novamente.");}}
 });
 supabase.auth.onAuthStateChange(async(_event,session)=>{
   if(!session){$("appView").classList.add("hidden");$("loginView").classList.remove("hidden");$("logoutBtn").classList.add("hidden");$("teacherMenuBtn").classList.add("hidden");$("teacherNav").classList.add("hidden");}
